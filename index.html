@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aapke Liye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --rose: #d4556a;
+    --rose-light: #e8859a;
+    --rose-faint: rgba(212,85,106,0.12);
+    --rose-border: rgba(212,85,106,0.18);
+    --bg: #0a0608;
+    --bg2: #110b0d;
+    --bg3: #160d10;
+    --text: #f0e4e6;
+    --text-muted: #7a5060;
+    --text-soft: #c09098;
+    --serif: 'Cormorant Garamond', serif;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── CANVAS ── */
+  #canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .petal {
+    position: absolute;
+    border-radius: 50% 50% 50% 0;
+    opacity: 0;
+    animation: petalFall linear infinite;
+  }
+  @keyframes petalFall {
+    0%   { transform: translateY(-30px) rotate(0deg) translateX(0px); opacity: 0; }
+    6%   { opacity: 0.55; }
+    88%  { opacity: 0.3; }
+    100% { transform: translateY(110vh) rotate(660deg) translateX(55px); opacity: 0; }
+  }
+
+  /* ── PAGES ── */
+  .page {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.4rem 5rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .page.active { display: flex; }
+
+  /* ── TYPOGRAPHY ── */
+  .tag {
+    font-family: var(--sans);
+    font-size: 9px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.8rem;
+    font-weight: 400;
+  }
+
+  .headline {
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 7vw, 4.2rem);
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .headline em { font-style: italic; color: var(--rose-light); }
+
+  .subline {
+    font-family: var(--serif);
+    font-size: clamp(1rem, 2.5vw, 1.15rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 2;
+    max-width: 400px;
+  }
+
+  /* ── BUTTON ── */
+  .btn {
+    display: inline-block;
+    margin-top: 2.4rem;
+    background: var(--rose);
+    color: #fff;
+    border: none;
+    padding: 0.9rem 2.8rem;
+    font-size: 0.73rem;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-weight: 500;
+    border-radius: 50px;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .btn:hover { background: #bf3f55; transform: translateY(-3px); }
+  .btn:active { transform: scale(0.97); }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--rose-border);
+    border-radius: 22px;
+    padding: 2rem 2rem;
+    max-width: 500px;
+    width: 100%;
+    margin: 1.8rem auto 0;
+    text-align: left;
+  }
+
+  .card-line {
+    font-family: var(--serif);
+    font-size: clamp(1rem, 2.4vw, 1.12rem);
+    font-weight: 300;
+    color: #8a5a65;
+    line-height: 2.2;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .card-line:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .card-line.vis { opacity: 1; transform: translateY(0); }
+  .card-line em { color: #d4a0a8; font-style: italic; }
+
+  /* ── FOOD ROWS ── */
+  .food-wrap {
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .food-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    text-align: left;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .food-row:last-child { border-bottom: none; }
+  .food-row.vis { opacity: 1; transform: translateY(0); }
+
+  .food-icon {
+    font-size: 22px;
+    min-width: 30px;
+    padding-top: 3px;
+    line-height: 1;
+  }
+
+  .food-text {
+    font-family: var(--serif);
+    font-size: clamp(1rem, 2.4vw, 1.1rem);
+    font-weight: 300;
+    color: #8a5a65;
+    line-height: 2;
+  }
+  .food-text em { color: #d4a0a8; font-style: italic; }
+
+  /* ── ASK PAGE ── */
+  .ask-big {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 6.5vw, 3.8rem);
+    font-weight: 300;
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: 0.7rem;
+  }
+  .ask-big em { font-style: italic; color: var(--rose-light); }
+
+  .ask-soft {
+    font-family: var(--serif);
+    font-size: clamp(0.95rem, 2.3vw, 1.05rem);
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 2;
+    margin-bottom: 2.6rem;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-y1 {
+    background: var(--rose);
+    color: #fff;
+    border: none;
+    padding: 1rem 2.4rem;
+    font-size: 0.8rem;
+    letter-spacing: 2.5px;
+    cursor: pointer;
+    font-family: var(--sans);
+    border-radius: 50px;
+    font-weight: 500;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .btn-y1:hover { background: #bf3f55; transform: translateY(-3px) scale(1.03); }
+  .btn-y1:active { transform: scale(0.97); }
+
+  .btn-y2 {
+    background: transparent;
+    color: var(--rose-light);
+    border: 1.5px solid var(--rose);
+    padding: 1rem 2.4rem;
+    font-size: 0.8rem;
+    letter-spacing: 2.5px;
+    cursor: pointer;
+    font-family: var(--sans);
+    border-radius: 50px;
+    font-weight: 400;
+    transition: all 0.2s;
+  }
+  .btn-y2:hover { background: var(--rose-faint); transform: translateY(-3px); }
+
+  /* ── YAY ── */
+  .yay-wrap { max-width: 420px; width: 100%; text-align: center; }
+
+  .yay-big {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 1rem;
+  }
+  .yay-big em { font-style: italic; color: var(--rose-light); }
+
+  .yay-note {
+    font-family: var(--serif);
+    font-size: clamp(1rem, 2.5vw, 1.12rem);
+    font-style: italic;
+    color: #8a5060;
+    line-height: 2.1;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .heartbeat {
+    animation: hb 1.8s ease-in-out infinite;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+  @keyframes hb {
+    0%, 100% { transform: scale(1); }
+    35%  { transform: scale(1.22); }
+    65%  { transform: scale(1.07); }
+  }
+
+  /* ── CONFETTI ── */
+  .conf {
+    position: fixed;
+    border-radius: 2px;
+    opacity: 0;
+    animation: cfFall linear forwards;
+    z-index: 999;
+    pointer-events: none;
+  }
+  @keyframes cfFall {
+    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(95vh) rotate(800deg); }
+  }
+
+  /* ── DOTS ── */
+  .dots {
+    position: fixed;
+    bottom: 1.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(212,85,106,0.2);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.on { background: var(--rose); transform: scale(1.3); }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.45;
+  }
+
+  /* ── GLOW ORBS ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat ease-in-out infinite alternate;
+  }
+  .orb1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(180,50,75,0.08) 0%, transparent 70%);
+    top: -100px; left: -150px;
+    animation-duration: 9s;
+  }
+  .orb2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(212,85,106,0.06) 0%, transparent 70%);
+    bottom: -80px; right: -100px;
+    animation-duration: 11s;
+  }
+  @keyframes orbFloat {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, 20px) scale(1.08); }
+  }
+
+  /* ── FADE IN ── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(22px);
+    animation: fadeUp 0.8s ease forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 480px) {
+    .card { padding: 1.5rem 1.3rem; border-radius: 16px; }
+    .food-row { gap: 0.8rem; }
+    .btns { flex-direction: column; align-items: center; }
+    .btn-y1, .btn-y2 { width: 100%; max-width: 280px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div id="canvas"></div>
+
+<!-- PAGE 1 -->
+<div class="page active" id="g1">
+  <div class="fade-up" style="animation-delay:0.1s">
+    <p class="tag">sirf aapke liye</p>
+    <h1 class="headline">Kuch kehna tha<br><em>aapse...</em></h1>
+    <p class="subline">seedha, simple, aur bilkul dil se.</p>
+    <button class="btn" onclick="go(2)">Padhiye →</button>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page" id="g2">
+  <p class="tag">dil ki baat</p>
+  <h2 class="headline" style="font-size:clamp(1.9rem,5.5vw,3.2rem);">Dost se shuru hua,<br><em>dil tak aa gaya.</em></h2>
+  <div class="card">
+    <p class="card-line">Pehle dost the, phir movie dekhi saath mein — aur beech mein jaane kab ek <em>connection</em> ban gaya.</p>
+    <p class="card-line">Aapki aankhon se pyar hua. Aapki harkaton se. Aapke nature se. Aapki vibe se. <em>Aapse.</em></p>
+    <p class="card-line">Aapke saath waqt ka pata hi nahi chalta — raat kab baat karte karte guzar jaati hai, <em>khabar hi nahi rehti.</em></p>
+    <p class="card-line">Aapke saath bahut <em>cozy</em> lagta hai. Aapke saath rehna achha lagta hai.</p>
+    <p class="card-line">Aur hamesha rehna hai. <em>Bas itna hi.</em></p>
+  </div>
+  <button class="btn" onclick="go(3)" style="margin-top:1.8rem;">Aur kuch hai →</button>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page" id="g3">
+  <p class="tag">aap hi hain</p>
+  <h2 class="headline" style="font-size:clamp(1.8rem,5vw,3rem);">Kuch cheezein yaad<br><em>dilaati hain aap...</em></h2>
+  <div class="food-wrap">
+    <div class="food-row">
+      <span class="food-icon">🫙</span>
+      <p class="food-text">Golgappe jaisi hain aap — <em>chatpati, fun, aur ek baar shuru karo toh rukne ka mann hi nahi karta.</em></p>
+    </div>
+    <div class="food-row">
+      <span class="food-icon">🍛</span>
+      <p class="food-text">Daal chawal jaisi comfortable hain — <em>roz reh sakta hoon aapke saath, kabhi bore nahi hoga.</em></p>
+    </div>
+    <div class="food-row">
+      <span class="food-icon">✨</span>
+      <p class="food-text">Aloo bhujia jaisi addictive hain — <em>ek baar baat start hui, band hi nahi hoti.</em></p>
+    </div>
+    <div class="food-row">
+      <span class="food-icon">🌸</span>
+      <p class="food-text">North Indian food ki tarah — <em>sab kuch best hai aapke baare mein. Koi comparison hi nahi.</em></p>
+    </div>
+  </div>
+  <button class="btn" onclick="go(4)" style="margin-top:1.8rem;">Ek sawaal hai →</button>
+</div>
+
+<!-- PAGE 4 -->
+<div class="page" id="g4">
+  <div id="askDiv" style="max-width:480px;width:100%;text-align:center;">
+    <p class="tag">bas ek chhoti si request</p>
+    <h2 class="ask-big">Chalenge mere saath<br><em>ek date pe?</em></h2>
+    <p class="ask-soft">Noida mein, kuch north indian khate hain,<br>thodi baatein karte hain — aur bas aap saath hon.</p>
+    <div class="btns">
+      <button class="btn-y1" onclick="yesClick('haan')">Haan! 🌸</button>
+      <button class="btn-y2" onclick="yesClick('def')">Haan, definitely!!</button>
+    </div>
+  </div>
+
+  <div id="yayDiv" style="display:none;" class="yay-wrap">
+    <div class="heartbeat">
+      <svg width="58" height="54" viewBox="0 0 58 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M29 51C29 51 3 34 3 17C3 8.8 9.6 2 18 2C22.9 2 27.2 4.7 29 8.8C30.8 4.7 35.1 2 40 2C48.4 2 55 8.8 55 17C55 34 29 51 29 51Z" fill="#d4556a"/>
+      </svg>
+    </div>
+    <h2 class="yay-big" id="yayT">Shukriya.<br><em>Sach mein.</em></h2>
+    <p class="yay-note" id="yayN">Koi jaldi nahi, koi pressure nahi. Bas ek achhi shaam, aapka saath — aur main chahiye kya.</p>
+  </div>
+</div>
+
+<!-- DOTS -->
+<div class="dots" id="dotsWrap">
+  <div class="dot on" id="d1"></div>
+  <div class="dot" id="d2"></div>
+  <div class="dot" id="d3"></div>
+  <div class="dot" id="d4"></div>
+</div>
+
+<script>
+  var cur = 1;
+
+  function go(n) {
+    document.getElementById('g' + cur).classList.remove('active');
+    document.getElementById('d' + cur).classList.remove('on');
+    cur = n;
+    var pg = document.getElementById('g' + n);
+    pg.classList.add('active');
+    document.getElementById('d' + n).classList.add('on');
+    spawnPetals();
+    if (n === 2 || n === 3) {
+      setTimeout(function () {
+        var rows = pg.querySelectorAll('.card-line, .food-row');
+        rows.forEach(function (r, i) {
+          setTimeout(function () { r.classList.add('vis'); }, i * 170);
+        });
+      }, 100);
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function yesClick(w) {
+    document.getElementById('askDiv').style.display = 'none';
+    var yd = document.getElementById('yayDiv');
+    yd.style.display = 'block';
+    yd.style.animation = 'fadeUp 0.7s ease forwards';
+    if (w === 'def') {
+      document.getElementById('yayT').innerHTML = 'Pakka??<br><em>Pakka pakka?!</em>';
+      document.getElementById('yayN').textContent = 'Haha okay okay — bas date fix karo. Main baaki sab dekh lunga. Promise wali baat hai.';
+    }
+    launchConfetti();
+  }
+
+  function spawnPetals() {
+    var c = document.getElementById('canvas');
+    c.innerHTML = '';
+    var cols = ['#d4556a', '#f0a0b5', '#b83050', '#ffd0de', '#e07085', '#ffe0ea'];
+    for (var i = 0; i < 22; i++) {
+      (function (i) {
+        setTimeout(function () {
+          var p = document.createElement('div');
+          p.className = 'petal';
+          var s = (6 + Math.random() * 9) + 'px';
+          p.style.width = s;
+          p.style.height = (parseFloat(s) + 5) + 'px';
+          p.style.left = (Math.random() * 100) + '%';
+          p.style.background = cols[Math.floor(Math.random() * cols.length)];
+          p.style.animationDuration = (6 + Math.random() * 8) + 's';
+          p.style.animationDelay = (Math.random() * 5) + 's';
+          p.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+          c.appendChild(p);
+        }, i * 100);
+      })(i);
+    }
+  }
+
+  function launchConfetti() {
+    var cols = ['#d4556a', '#f0a0b5', '#fff', '#e07085', '#ffd0de', '#b83050', '#ffe0ea'];
+    for (var i = 0; i < 80; i++) {
+      (function (i) {
+        setTimeout(function () {
+          var p = document.createElement('div');
+          p.className = 'conf';
+          p.style.left = (6 + Math.random() * 88) + '%';
+          p.style.top = '2%';
+          p.style.background = cols[Math.floor(Math.random() * cols.length)];
+          p.style.animationDuration = (1.6 + Math.random() * 2.8) + 's';
+          p.style.animationDelay = (Math.random() * 0.8) + 's';
+          p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+          var s = (5 + Math.random() * 9) + 'px';
+          p.style.width = s; p.style.height = s;
+          document.body.appendChild(p);
+          setTimeout(function () { p.remove(); }, 5000);
+        }, i * 28);
+      })(i);
+    }
+  }
+
+  spawnPetals();
+</script>
+</body>
+</html>
